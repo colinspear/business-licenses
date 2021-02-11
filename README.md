@@ -1,0 +1,1 @@
+* Data can be found on the Vancouver [Open Data Portal](https://opendata.vancouver.ca/explore/dataset/business-licences/information/?disjunctive.status&disjunctive.businesssubtype)
