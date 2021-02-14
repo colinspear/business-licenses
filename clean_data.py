@@ -1,10 +1,5 @@
 import pandas as pd
+import numpy as np
 
 def clean_data(df):
-    
-df = pd.read_csv('data/2020.11.15-business-licences.csv', sep=';')
-
-# %%
-df.head()
-# %%
-df = df.loc[df['Province'] == 'BC']
+    # drop cancelled applications (df['Status']=='Cancelled')
