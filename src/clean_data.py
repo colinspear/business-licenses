@@ -12,7 +12,7 @@ def identify_businesses(raw_data_path):
     Args:
         raw_data_path (string): path to business license csv
     """
-    
+
     df = pd.read_csv(project_path / raw_data_path, sep=';')
 
     # turn off SettingWithCopy warning
@@ -39,7 +39,7 @@ def identify_businesses(raw_data_path):
 
     # If a license is revised in the same year, it will get another entry
     year_duplicates = df.loc[df['year_id'].duplicated(keep=False)]
-    
+
     # count number of times a business renewed their license
     # year_duplicates['revisions'] = year_duplicate.groupby('year_id').size
 
@@ -48,13 +48,13 @@ def identify_businesses(raw_data_path):
             subset=['year_id', 'LicenceRevisionNumber'], keep=False
             )
         ]
-    
+
     lic_revisions['max_rev'] = (
         lic_revisions
         .groupby('year_id')['LicenceRevisionNumber']
         .transform('max')
         )
-    
+
     lic_revisions_final = (
         lic_revisions
         .loc[
@@ -68,7 +68,7 @@ def identify_businesses(raw_data_path):
         lic_revisions_final.drop('max_rev', axis=1),
         verify_integrity=True
         )
-    
+
     # fill in license revision numbers for non year duplicates
     # df['revisions'] = df['revisions'].fillna(value=1)
 

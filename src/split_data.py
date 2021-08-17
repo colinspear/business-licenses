@@ -1,5 +1,8 @@
 # %%
+from pathlib import Path
+
 import pandas as pd
+from sklearn.preprocessing import OneHotEncoder
 
 from clean_data import identify_businesses
 
@@ -7,38 +10,70 @@ from clean_data import identify_businesses
 project_path = Path(__file__).parent.parent
 data_path = project_path / 'data/2020.11.15-business-licences.csv'
 
-# %%
 df = identify_businesses(data_path)
-# %%
-df.head()
 # %% [markdown]
 # # Targets and features
-#
+
 # ## Targets
-#
+
 # - continuous (how long will business last?)
 # - business lasts <= 1 year
 # - business lasts <= 2 years
 # - business lasts <= 3 years (it seems that the longer a business survives, the longer it is likely to survive, so I don't know how many of these year targets are worth looking at.)
-#
+
 # ## Features 
-#
-# - (done) number of revisions per year. May signal that owner is disorganized, etc. if they are not on top of their business license
-# - more than one revision per year
-# - discrete buckets of the various continuous measures (`NumberofEmployees`, `FeePaid`)
-# - month, day of week of `IssuedDate`
-# - inactive in year (dummy or count)
-# - cancelled in year (dummy or count)
-# - pending in year (dummy or count)
-# - any combinations of the above
-#
-# I forgot that I did the cleanup such that each business has only one row per year. That means that I can't build the features that use within year-business variation. To make those features I need to either do so in the preprocessing or modify the preprocessing to not collapse the data to one observation per business per year. Ideally I would do the latter so I have a clean separation between preprocessing, feature building and splitting the data which minimizes the likelihood of data leakage.
+
+# - (TODO) Requires within year variation
+#   - (done) number of revisions per year. May signal that owner is disorganized, etc. if they are not on top of their business license
+#   - more than one revision per year
+#   - inactive in year (dummy or count)
+#   - cancelled in year (dummy or count)
+#   - pending in year (dummy or count)
+# - Doesn't require within year variation
+#   - Continuous variables. If used as continuous variables will likely need some transformation: normalization, rescale, etc. I can also try turning them into discrete variables by bucketing
+#       - `NumberofEmployees` 
+#       - `FeePaid`
+#       - discrete buckets of the various continuous measures (`NumberofEmployees`, `FeePaid`)
+#   - Categorical variables
+#       - `UnitType`
+#       - `LocalArea`
+#       - `BusinessType`
+#       - `BusinessSubType`
+#       - `Street` (could possibly use to interpolate `LocalArea` where missing)
+#   - month, day of week of `IssuedDate`
+
 # %%
 df.columns
 # %%
-df['Status'].value_counts()
+# inspect unit, unit type, business type and subtype
+
+vars = ['Unit', 'UnitType', 'LocalArea', 'FeePaid', 
+    'BusinessType', 'BusinessSubType', 'Street', 'House']
+
+for v in vars:
+    print(v, '\n', df[v].describe(), '\n')
+
+# %% [markdown]
+# **Cleaning notes**
+
+# - `Unit` is number, probably not useful, could extract floor maybe?
+# - `UnitType` is mostly non-descriptive (`UnitType=='Unit'`), could provide togle in case it's useful for the other categories
+# - `LocalArea` (neighborhood) looks good, some missing values, but mostly not. Clean
+# - `FeePaid` has some variation, but I'm not sure what it's value could be. Maybe normalize and 
+
+
+
 # %%
-df['id'].unique().shape
+
+# one hot encode population, neighborhood, business type / subtype
+bins = [0, 2, 6, 11, 21, 51, 101, 201, df['NumberofEmployees'].max()]
+empl_bins = pd.cut(df['NumberofEmployees'], bins, right=False)
+
+enc = OneHotEncoder(handle_unknown='ignore')
+enc.fit(empl_bins)
+# %%
+df.loc[df['NumberofEmployees']>=5000, ['NumberofEmployees', 'BusinessName']]
+
 # %%
 df['BusinessType'].unique().shape
 # %%
@@ -47,3 +82,6 @@ df['BusinessType'].unique().shape
 (df.groupby('year_id')['id'].count() > 1).sum()
 
 # %%
+
+# There are a number of categorical variables we can one hot encode
+
